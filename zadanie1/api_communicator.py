@@ -1,17 +1,26 @@
 from datetime import date
 from logging import Logger
-from pydantic import BaseModel
-import requests
+
 import geocoder
+import requests
+from pydantic import BaseModel
 
 
 class WeatherData(BaseModel):
+    """
+    Class for storing weather data
+    """
+
     city: str
     date: str
     max_temperature: float
     min_temperature: float
     rain_sum: float
     max_wind_speed: float
+
+    def __str__(self) -> str:
+        data = "\n".join([f"{k}: {v}" for k, v in self.dict().items()])
+        return data
 
 
 class ApiCommunicator:
@@ -49,10 +58,10 @@ class ApiCommunicator:
             min_temperature = json_data["daily"]["temperature_2m_min"][0]
             rain_sum = json_data["daily"]["rain_sum"][0]
             max_wind_speed = json_data["daily"]["windspeed_10m_max"][0]
-        except KeyError as e:
-            msg = f"Incorrect response from API: {e}"
+        except KeyError as err:
+            msg = f"Incorrect response from API: {err}"
             self.logger.error(msg)
-            raise ValueError(msg)
+            raise err
 
         return WeatherData(
             city=city,

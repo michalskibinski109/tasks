@@ -1,8 +1,7 @@
 import argparse
 from datetime import date
 
-from miskibin import get_logger
-
+from miskibin import get_logger  # library created by me for colored logs
 from model import Model
 
 
@@ -34,11 +33,11 @@ def _get_parser() -> argparse.ArgumentParser:
 
 if __name__ == "__main__":
     logger = get_logger(lvl="DEBUG")  # Logger from my own library
-    parser = _get_parser()
-    model = Model(logger=logger)
+    arg_parser = _get_parser()
+    model = Model(logger=get_logger(lvl="DEBUG"))
     try:
-        args = parser.parse_args()
-    except SystemExit as e:
-        parser.print_help()
-        exit(e.code)
+        args = arg_parser.parse_args()
+    except SystemExit as err:
+        arg_parser.print_help()
+        raise err
     model.get_weather(date=args.date, location=args.location, file=args.file)
