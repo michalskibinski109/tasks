@@ -1,0 +1,6 @@
+pydantic
+miskibin
+redis
+geocoder
+pandas
+pyaml

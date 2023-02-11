@@ -1,0 +1,6 @@
+redis:
+  host: localhost
+  port: 6379
+  password: ""
+timezone: "Europe/Warsaw"
+api_url: "https://api.open-meteo.com/v1/forecast"
