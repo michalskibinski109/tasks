@@ -25,10 +25,13 @@ main.py -h
 main.py -d 2023-01-01
 ```
 ### output
-```bash
-City: Wroclaw
-date: 2023-01-01
-temperature: 16.2 Celsius
+```json
+"city": "Wroclaw",
+"date": "2023-02-11",
+"max_temperature": 5.7,
+"min_temperature": 0.2,
+"rain_sum": 1.0,
+"max_wind_speed": 21.0
 ```
 ## Notes
 1. If Redis is not running, caching will be automatically disabled.

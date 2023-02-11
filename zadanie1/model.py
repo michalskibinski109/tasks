@@ -3,7 +3,7 @@ import redis  # for caching
 import geocoder
 import pandas as pd
 from redis.exceptions import ConnectionError, AuthenticationError
-from api_communicator import ApiCommunicator
+from api_communicator import ApiCommunicator, WeatherData
 import yaml
 from pathlib import Path
 
@@ -28,6 +28,7 @@ class Model:
                 host=self.config["redis"]["host"],
                 port=self.config["redis"]["port"],
                 password=self.config["redis"]["password"],
+                decode_responses=True,
             )
             if client.ping() is True:
                 return client
@@ -41,45 +42,25 @@ class Model:
             )
             return None
 
-    def __save_to_file(
-        self, date: str, location: str, file: str, temperature: float
-    ) -> None:
+    def __save_to_file(self, file: str, weather_data: WeatherData) -> None:
         self.logger.debug(f"Saving data to file: {file}")
-        df = pd.DataFrame(
-            {
-                "city": [location],
-                "date": [date],
-                "temperature": [temperature],
-            }
-        )
+        df = pd.DataFrame(weather_data.dict(), index=[0])
         df.to_csv(file, index=False)
 
-    def __get_weather_from_api(self, location: str, date: str) -> float:
-        g = geocoder.osm(location)
-        if not g.ok:
-            raise ValueError(f"City: {location} not found")
-        lat, lng = g.json["lat"], g.json["lng"]
-        temperature = self.api_communicator.get_temperature(
-            lat=float(lat), lng=float(lng), date=date, timezone=self.config["timezone"]
-        )
-        return temperature
-
     def get_weather(self, date: str, location: str, file: str) -> None:
-        # check for cache
         cache_key = f"{location}_{date}"
         if self.redis_client and self.redis_client.exists(cache_key):
             self.logger.debug(f"Fetched from cache: {cache_key}")
-            temperature = self.redis_client.get(cache_key).decode("utf-8")
+            dict_data = self.redis_client.hgetall(cache_key)
+            weather_data = WeatherData(**dict_data)
         else:
-            temperature = self.__get_weather_from_api(location, date)
+            weather_data = self.api_communicator.get_weather(
+                city=location, date=date, timezone=self.config["timezone"]
+            )
             if self.redis_client:
                 self.logger.debug(f"Saving to cache: {cache_key}")
-                self.redis_client.set(cache_key, temperature)
+                self.redis_client.hmset(cache_key, weather_data.dict())
         if file:
-            self.__save_to_file(
-                file=file, date=date, location=location, temperature=temperature
-            )
+            self.__save_to_file(file=file, weather_data=weather_data)
         else:
-            print(
-                f"City: {location}\ndate: {date}\ntemperature: {temperature} Celsius\n"
-            )
+            print(weather_data.json(indent=4))
