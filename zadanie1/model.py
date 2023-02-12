@@ -10,16 +10,14 @@ from redis.exceptions import AuthenticationError, ConnectionError
 
 
 class Model:
+    """
+    Summary:
+        Class for storing and processing data from API. Uses redis for caching data.
+    Note:
+        If redis is not available, caching is disabled.
+    """
+
     def __init__(self, logger: Logger, config_path: Path = Path("config.yaml")) -> None:
-        """
-        Summary:
-            Class for storing and processing data from API. Uses redis for caching data.
-        Args:
-            logger: Logger object
-            config_path: Path to config file
-        Note:
-            If redis is not available, caching is disabled.
-        """
         self.logger = logger
         self.config = self.__load_config(config_path)
         self.redis_client = self.__set_redis_client()
@@ -41,31 +39,34 @@ class Model:
                 decode_responses=True,
             )
             if client.ping() is True:
+                self.logger.debug("Connected to redis")
                 return client
         except (
             AuthenticationError,
             ConnectionError,
         ) as err:
             self.logger.warning(
-                f"Failed to connect to redis. Make sure password is correct and redis is running"
-                f"on {self.config['redis']['host']}:{self.config['redis']['port']}."
-                f"Using cache disabled\n{err}"
+                f"Failed to connect to redis. {err} Using cache disabled."
             )
             return None
 
-    def __save_to_file(self, file: str, weather_data: WeatherData) -> None:
-        self.logger.debug(f"Saving data to file: {file}")
+    def __save_to_file(self, file_path: Path, weather_data: WeatherData) -> None:
+        self.logger.info(f"Saving data to file: {file_path}")
         df = pd.DataFrame(weather_data.dict(), index=[0])
-        df.to_csv(file, index=False)
+        try:
+            df.to_csv(file_path, index=False)
+        except OSError as err:
+            self.logger.error(f"{err}")
+            raise err
 
-    def get_weather(self, date: date, location: str, file: str) -> None:
+    def get_weather(self, date: date, location: str, file_path: Path) -> None:
         """
         Summary:
             Get weather data from API or cache and save to file or print to console.
         Args:
             date (str): Date in format YYYY-MM-DD
             location (str): City name
-            file (str): File path to save data to. If None, data will be printed to console.
+            file_path (Path): File path to save data to. If None, data will be printed to console.
         Returns:
             None
         Raises:
@@ -73,7 +74,7 @@ class Model:
         """
         cache_key = f"{location}_{date}"
         if self.redis_client and self.redis_client.exists(cache_key):
-            self.logger.debug(f"Fetched {cache_key} from cache")
+            self.logger.info(f"Fetched {cache_key} from cache")
             dict_data = self.redis_client.hgetall(cache_key)
             weather_data = WeatherData(**dict_data)
         else:
@@ -83,7 +84,7 @@ class Model:
             if self.redis_client:
                 self.logger.debug(f"Saving to cache: {cache_key}")
                 self.redis_client.hmset(cache_key, weather_data.dict())
-        if file:
-            self.__save_to_file(file=file, weather_data=weather_data)
+        if file_path:
+            self.__save_to_file(file_path=file_path, weather_data=weather_data)
         else:
             print(weather_data)

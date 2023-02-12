@@ -75,6 +75,8 @@ class ApiCommunicator:
     def __get_coordinates(self, city: str) -> tuple:
         g = geocoder.osm(city)
         if not g.ok:
-            raise ValueError(f"City: {city} not found")
+            msg = f'Coordinates for city "{city}" not found. Msg returned: {g.status}'
+            self.logger.error(msg)
+            raise ValueError(msg)
         lat, lng = g.json["lat"], g.json["lng"]
         return lat, lng

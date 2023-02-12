@@ -1,8 +1,11 @@
 import argparse
 from datetime import date
 
-from miskibin import get_logger  # library created by me for colored logs
+from miskibin import (
+    get_logger,
+)  # library created by me that simplifies configuration of logger. Also provides colored logs
 from model import Model
+from pathlib import Path
 
 
 def _get_parser() -> argparse.ArgumentParser:
@@ -24,7 +27,7 @@ def _get_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "-f",
         "--file",
-        type=str,
+        type=Path,
         default=None,
         help="File to save weather forecast Eg. weather_data.csv",
     )
@@ -32,12 +35,16 @@ def _get_parser() -> argparse.ArgumentParser:
 
 
 if __name__ == "__main__":
-    logger = get_logger(lvl="DEBUG")  # Logger from my own library
     arg_parser = _get_parser()
-    model = Model(logger=get_logger(lvl="DEBUG"))
+    model = Model(
+        logger=get_logger(
+            lvl="DEBUG",
+            format=f"%(asctime)-9s:: %(levelname)-6s:: %(message)s (%(filename)s:%(lineno)d)",
+        )
+    )
     try:
         args = arg_parser.parse_args()
     except SystemExit as err:
         arg_parser.print_help()
         raise err
-    model.get_weather(date=args.date, location=args.location, file=args.file)
+    model.get_weather(date=args.date, location=args.location, file_path=args.file)
