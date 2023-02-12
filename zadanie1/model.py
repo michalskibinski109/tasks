@@ -52,7 +52,11 @@ class Model:
 
     def __save_to_file(self, file_path: Path, weather_data: WeatherData) -> None:
         self.logger.info(f"Saving data to file: {file_path}")
-        df = pd.DataFrame(weather_data.dict(), index=[0])
+        if file_path.exists():
+            df = pd.read_csv(file_path)
+            df = df.append(weather_data.dict(), ignore_index=True)
+        else:
+            df = pd.DataFrame(weather_data.dict(), index=[0])
         try:
             df.to_csv(file_path, index=False)
         except OSError as err:

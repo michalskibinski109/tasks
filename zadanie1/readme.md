@@ -22,16 +22,19 @@ main.py -h
 ## example usage
 ### input
 ```bash
-main.py -d 2023-01-01
+main.py -d 2023-02-02 -l krakow
 ```
 ### output
 ```bash
-city: Wroclaw
-date: 2023-02-12
-max_temperature: 6.7
-min_temperature: 3.8
-rain_sum: 0.1
-max_wind_speed: 11.8
+11:02:03 :: DEBUG :: Connected to redis (model.py:42)
+11:02:04 :: DEBUG :: Response code from https://api.open-meteo.com/v1/forecast: 200 (api_communicator.py:51)
+11:02:04 :: DEBUG :: Saving to cache: krakow_2023-02-02 (model.py:89)
+city: krakow
+date: 2023-02-02
+max_temperature: 3.6
+min_temperature: 0.8
+rain_sum: 4.4
+max_wind_speed: 21.5
 ```
 ## Notes
 1. If Redis is not running, caching will be automatically disabled.
