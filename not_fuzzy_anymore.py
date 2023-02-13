@@ -60,7 +60,6 @@ class ProcessDataAction:
         for product_id in json_data["bundle_items"]:
             product_data = self.get_data_from_server(product_id)
             for supply in product_data["details"]["supply"]:
-                self.logger.debug(f"Supply: {supply}")
                 supply = self.__get_supply(supply)
                 self.logger.debug(f"Supply: {supply}")
                 min_supply = min(min_supply, supply)
